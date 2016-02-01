@@ -274,9 +274,9 @@ namespace urmem
 
 		inline static std::map<std::string, std::shared_ptr<patch>> &get_map(void)
 		{
-			static std::map<std::string, std::shared_ptr<patch>> hook_patch;
+			static std::map<std::string, std::shared_ptr<patch>> patch_map;
 
-			return hook_patch;
+			return patch_map;
 		}
 
 	private:	
@@ -368,7 +368,6 @@ namespace urmem
 					_original_func_addr = 
 						memory::pointer(_inject_addr).field<address_t>(1) + (_inject_addr + 5); 
 					// calculate addr of called function
-					
 					break;
 				}
 			}
@@ -394,7 +393,7 @@ namespace urmem
 		
 		address_t				_inject_addr;	
 		address_t				_original_func_addr;
-		std::shared_ptr<patch>	_patch;			
+		std::shared_ptr<patch>			_patch;			
 	};		
 	
 };
