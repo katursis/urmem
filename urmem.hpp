@@ -113,12 +113,12 @@ namespace urmem
 		};
 #endif
 
-		static bool find_address(const char *pattern, const char *mask, urmem::address_t &address)
+		static bool find_address(const char *module, const char *pattern, const char *mask, urmem::address_t &address)
 		{
 			void *addr{};
 			std::size_t size{};
 #ifdef _WIN32	
-			addr = GetModuleHandleA(nullptr);
+			addr = GetModuleHandleA(module ? module : nullptr);
 
 			MEMORY_BASIC_INFORMATION info{};
 
