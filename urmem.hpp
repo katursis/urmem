@@ -10,20 +10,15 @@
 #endif
 
 #include <vector>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <algorithm>
 #include <map>
 #include <iterator>
-#include <string>
 #include <memory>
 
 namespace urmem
 {
 	typedef unsigned long		address_t;
 	typedef unsigned char		byte_t;
-	typedef std::vector<byte_t>	bytearray_t;	
+	typedef std::vector<byte_t>	bytearray_t;
 
 	enum class calling_convention
 	{
@@ -33,8 +28,54 @@ namespace urmem
 	};
 
 	class memory
-	{		
+	{
 	public:
+
+		template<typename T>
+		class bit_manager
+		{
+		public:
+
+			bit_manager(void) = delete;
+			bit_manager(T &src) :_data(src) {}
+
+			class bit
+			{
+			public:
+
+				bit(void) = delete;
+				inline bit(T &src, const size_t &index) : _data(src), _mask(1 << index), _index(index) {}
+
+				inline auto &operator=(const bool &value)
+				{
+					if (value)
+						_data |= _mask;
+					else
+						_data &= ~_mask;
+
+					return *this;
+				}
+
+				inline operator bool()
+				{
+					return (_data & _mask) != 0;
+				}
+
+			private:
+				T &_data;
+				T _mask;
+				size_t _index;
+			};
+
+			inline bit operator [](const size_t &index)
+			{
+				return bit(_data, index);
+			};			
+
+		private:
+
+			T &_data;
+		};
 
 		class pointer
 		{
@@ -43,26 +84,27 @@ namespace urmem
 			template<typename T>
 			inline pointer(T *address) : _pointer(reinterpret_cast<address_t>(address)) {}
 			inline pointer(const address_t &address) : _pointer(address) {}
-			inline pointer(void) : _pointer(0) {}
+			pointer(void) = delete;
 
 			template<typename T>
-			inline T &field(unsigned int offset)
+			inline T &field(const size_t &offset)
 			{
-				return *(reinterpret_cast<T*>(_pointer + offset));
+				return *(reinterpret_cast<T *>(_pointer + offset));
 			}
 
-			inline pointer ptr_field(unsigned int offset)
+			inline pointer ptr_field(const size_t &offset)
 			{
 				return pointer(field<address_t>(offset));
 			}
 
 			template<typename T>
-			inline operator T*()
+			inline operator T *()
 			{
-				return reinterpret_cast<T*>(_pointer);
+				return reinterpret_cast<T *>(_pointer);
 			}
 
 		private:
+
 			address_t _pointer;
 		};
 
@@ -71,14 +113,14 @@ namespace urmem
 		{
 		public:
 
-			inline unprotect_context(address_t addr, size_t length) :_addr(addr), _lenght(length)
+			inline unprotect_context(const address_t &addr, const size_t &length) :_addr(addr), _lenght(length)
 			{
-				VirtualProtect(reinterpret_cast<byte_t*>(_addr), _lenght, PAGE_EXECUTE_READWRITE, &_original_protect);
+				VirtualProtect(reinterpret_cast<byte_t *>(_addr), _lenght, PAGE_EXECUTE_READWRITE, &_original_protect);
 			}
 
 			inline ~unprotect_context(void)
 			{
-				VirtualProtect(reinterpret_cast<byte_t*>(_addr), _lenght, _original_protect, nullptr);
+				VirtualProtect(reinterpret_cast<byte_t *>(_addr), _lenght, _original_protect, nullptr);
 			}
 
 		private:
@@ -92,7 +134,7 @@ namespace urmem
 		{
 		public:
 
-			inline unprotect_context(address_t addr, size_t length) :_addr(addr), _lenght(length)
+			inline unprotect_context(const address_t &addr, const size_t &length) :_addr(addr), _lenght(length)
 			{
 				auto pagesize = sysconf(_SC_PAGE_SIZE);
 
@@ -173,17 +215,17 @@ namespace urmem
 			return false;
 		}
 
-		template<typename returnType = void, typename... argTypes>
-		inline static returnType call_function(const calling_convention convention, urmem::address_t address, argTypes... args)
+		template<typename returnType = void, typename ... argTypes>
+		inline static returnType call_function(const calling_convention &convention, const urmem::address_t &address, argTypes ... args)
 		{
 #ifdef _WIN32
 			switch (convention)
 			{
-				case calling_convention::cdeclcall: 
+				case calling_convention::cdeclcall:
 					return (reinterpret_cast<returnType(__cdecl *)(argTypes...)>(address))(args...);
-				case calling_convention::stdcall: 
+				case calling_convention::stdcall:
 					return (reinterpret_cast<returnType(__stdcall *)(argTypes...)>(address))(args...);
-				case calling_convention::thiscall: 
+				case calling_convention::thiscall:
 					return (reinterpret_cast<returnType(__thiscall *)(argTypes...)>(address))(args...);
 			}
 
@@ -193,20 +235,22 @@ namespace urmem
 #endif
 		}
 	};
-				
+
 	class patch
 	{
-	public:	
-		
-		inline static std::shared_ptr<patch> create(const std::string &name, const address_t &addr, const bytearray_t &new_data)
+	public:
+
+		static std::shared_ptr<patch> create(const std::string &name, const address_t &addr, const bytearray_t &new_data)
 		{
-			if (patch::is_exists(name))
-				return nullptr;
+			std::map<std::string, std::shared_ptr<patch>>::iterator it;
+
+			if (patch::is_exists(name, it))
+				return it->second;
 
 			return patch::get_map()[name] = std::make_shared<patch>(addr, new_data);
 		}
 
-		inline static std::shared_ptr<patch> get(const std::string &name)
+		static std::shared_ptr<patch> get(const std::string &name)
 		{
 			std::map<std::string, std::shared_ptr<patch>>::iterator it;
 
@@ -216,22 +260,15 @@ namespace urmem
 			return it->second;
 		}
 
-		inline static bool is_exists(const std::string &name, std::map<std::string, std::shared_ptr<patch>>::iterator &it)
+		static bool is_exists(const std::string &name, std::map<std::string, std::shared_ptr<patch>>::iterator &it)
 		{
 			return (it = patch::get_map().find(name)) != patch::get_map().end();
 		}
 
-		inline static bool is_exists(const std::string &name)
-		{
-			return patch::get_map().find(name) != patch::get_map().end();
-		}		
-
 		patch(void) = delete;
-		patch(const patch&) = delete;
-		patch &operator=(patch&) = delete;
 
 		patch(const address_t &addr, const bytearray_t &new_data)
-			: _patch_addr(addr), _new_data(new_data), _enabled(false) 
+			: _patch_addr(addr), _new_data(new_data), _enabled(false)
 		{
 			enable();
 		}
@@ -240,20 +277,20 @@ namespace urmem
 		{
 			disable();
 		}
-		
+
 		void enable(void)
 		{
 			if (_enabled)
-				return;			
+				return;
 
-			memory::unprotect_context context(_patch_addr, _new_data.size());			 
-			
+			memory::unprotect_context context(_patch_addr, _new_data.size());
+
 			_original_data.clear();
 
 			std::copy_n(reinterpret_cast<bytearray_t::value_type*>(_patch_addr), _new_data.size(),
 				std::back_inserter<bytearray_t>(_original_data)); // save original bytes
-			
-			std::copy_n(_new_data.data(), _new_data.size(), 
+
+			std::copy_n(_new_data.data(), _new_data.size(),
 				reinterpret_cast<bytearray_t::value_type*>(_patch_addr)); // put new bytes	
 
 			_enabled = true;
@@ -272,41 +309,46 @@ namespace urmem
 			_enabled = false;
 		}
 
-		inline static std::map<std::string, std::shared_ptr<patch>> &get_map(void)
+		bool is_enabled(void)
+		{
+			return _enabled;
+		}
+
+		static std::map<std::string, std::shared_ptr<patch>> &get_map(void)
 		{
 			static std::map<std::string, std::shared_ptr<patch>> patch_map;
 
 			return patch_map;
 		}
 
-	private:	
+	private:
 
 		address_t		_patch_addr;
 		bytearray_t		_original_data;
 		bytearray_t		_new_data;
-		bool			_enabled;		
+		bool			_enabled;
 	};
-	
+
 	class hook
 	{
-	public:		
+	public:
 
 		enum class type
 		{
 			jmp,
 			call
 		};
-		
+
 		class context
 		{
 		public:
 
 			inline context(std::shared_ptr<hook> &h) : _this(h) { _this->disable(); }
-			inline context(const std::string &hookname) : _this(hook::get(hookname)) { _this->disable(); }			
+			inline context(const std::string &hookname) : _this(hook::get(hookname)) { _this->disable(); }
 			inline ~context(void) { _this->enable(); }
 
-			template<typename returnType = void, typename... argTypes>
-			inline returnType call_original(const calling_convention &convention, argTypes... args)
+			template<typename returnType = void, typename ... argTypes>
+			inline returnType call_original(const calling_convention &convention, argTypes ... args)
 			{
 				return memory::call_function<returnType>(convention, _this->_original_func_addr, args...);
 			}
@@ -315,41 +357,36 @@ namespace urmem
 
 			std::shared_ptr<hook> _this;
 		};
-		
-		inline static std::shared_ptr<hook> create(const std::string &name, address_t inject_addr, 
+
+		static std::shared_ptr<hook> create(const std::string &name, address_t inject_addr,
 			address_t handle_addr, hook::type hook_t = hook::type::jmp, size_t length = 5 /*default len for hook*/)
 		{
-			if (hook::is_exists(name))
-				return nullptr;
+			std::map<std::string, std::shared_ptr<hook>>::iterator it;
+
+			if (hook::is_exists(name, it))
+				return it->second;
 
 			return hook::get_map()[name] = std::make_shared<hook>(hook_t, inject_addr, handle_addr, length);
 		}
 
-		inline static std::shared_ptr<hook> get(const std::string &name)
+		static std::shared_ptr<hook> get(const std::string &name)
 		{
-			std::map<std::string, std::shared_ptr<hook>>::iterator it;			
+			std::map<std::string, std::shared_ptr<hook>>::iterator it;
 
-			if (!hook::is_exists(name, it))							
+			if (!hook::is_exists(name, it))
 				return nullptr;
-			
+
 			return it->second;
 		}
-		
-		inline static bool is_exists(const std::string &name, std::map<std::string, std::shared_ptr<hook>>::iterator &it)
-		{			
+
+		static bool is_exists(const std::string &name, std::map<std::string, std::shared_ptr<hook>>::iterator &it)
+		{
 			return (it = hook::get_map().find(name)) != hook::get_map().end();
 		}
 
-		inline static bool is_exists(const std::string &name)
-		{
-			return hook::get_map().find(name) != hook::get_map().end();
-		}
-
 		hook(void) = delete;
-		hook(const hook&) = delete;
-		hook &operator=(hook&) = delete;
 
-		hook(type hook_t, address_t inject_addr, address_t handle_addr, size_t length)
+		hook(const type &hook_t, const address_t &inject_addr, const address_t &handle_addr, const size_t &length)
 			:_inject_addr(inject_addr), _original_func_addr(0)
 		{
 			bytearray_t new_bytes(length, 0x90);
@@ -365,37 +402,40 @@ namespace urmem
 				case type::call:
 				{
 					new_bytes[0] = 0xE8; // call	
-					_original_func_addr = 
-						memory::pointer(_inject_addr).field<address_t>(1) + (_inject_addr + 5); 
-					// calculate addr of called function
+					_original_func_addr =
+						memory::pointer(_inject_addr).field<address_t>(1) + (_inject_addr + 5);
+					// calculate addr of called function					
 					break;
 				}
 			}
 
-			memory::pointer(new_bytes.data()).field<address_t>(1) = 
+			memory::pointer(new_bytes.data()).field<address_t>(1) =
 				handle_addr - (_inject_addr + 5); // calculate offset on handle
 
 			_patch = std::make_shared<patch>(_inject_addr, new_bytes);
 		}
 
-		inline void enable(void) { _patch->enable(); }
+		void enable(void) { _patch->enable(); }
 
-		inline void disable(void) { _patch->disable(); }
+		void disable(void) { _patch->disable(); }
 
-		inline static std::map<std::string, std::shared_ptr<hook>> &get_map(void)
+		bool is_enabled(void) { return _patch->is_enabled(); };
+
+		address_t &get_original_func_addr(void) { return _original_func_addr; };
+
+		static std::map<std::string, std::shared_ptr<hook>> &get_map(void)
 		{
 			static std::map<std::string, std::shared_ptr<hook>> hook_map;
 
 			return hook_map;
 		}
-		
-	private:		
-		
-		address_t				_inject_addr;	
+
+	private:
+
+		address_t				_inject_addr;
 		address_t				_original_func_addr;
-		std::shared_ptr<patch>			_patch;			
-	};		
-	
+		std::shared_ptr<patch>	_patch;
+	};
 };
 
 #endif // URMEM_H_
