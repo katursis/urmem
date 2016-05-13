@@ -1,30 +1,39 @@
 # urmem
-C++11 crossplatform library for working with memory (hooks, patches, pointer's wrapper, signature scanner)
-## Example
+C++11 cross-platform library for working with memory (hooks, patches, pointer's wrapper, signature scanner etc.)
+## Simple example
 ```cpp
+#include <iostream>
 #include "urmem.hpp"
 
 using namespace std;
-using namespace urmem;
+using m = urmem;
 
-shared_ptr<hook> hook_messageboxa;
-
-int WINAPI HOOK_MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+#ifdef _WIN32
+#pragma optimize("", off)
+_declspec(noinline) int __cdecl sum(int a, int b)
+#else
+#pragma GCC optimize ("O0")
+int sum(int a, int b)
+#endif
 {
-	hook::context ctx(hook_messageboxa);
-
-	lpText = "Hello, urmem!";
-
-	return ctx.call_original<int>(calling_convention::stdcall, hWnd, lpText, lpCaption, uType);
+	return a + b;
 }
 
-void main(void)
+enum e_hook
 {
-	hook_messageboxa = hook::create(
-		"messageboxa",
-		reinterpret_cast<address_t>(GetProcAddress(GetModuleHandleA("User32.dll"), "MessageBoxA")),
-		reinterpret_cast<address_t>(HOOK_MessageBoxA));
+	h_sum
+};
 
-	MessageBoxA(0, "Hello, World!", "Test", 0);
+int main(void)
+{
+	m::smart_hook<e_hook::h_sum, m::calling_convention::cdeclcall, int(int, int)> hook_sum(m::get_func_addr(&sum));
+
+	hook_sum.attach([&hook_sum](int a, int b)
+	{
+		return hook_sum.call(a, b) * 2;
+	});
+
+	cout << sum(2, 3) << endl; // will print '10'	
 }
+
 ```
