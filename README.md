@@ -35,5 +35,7 @@ int main(void)
 
 	cout << sum(2, 3) << endl; // will print '10'	
 }
-
 ```
+## TODO
+- x64 support
+- More helper functions
