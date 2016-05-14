@@ -1,13 +1,15 @@
 #include <iostream>
 #include "urmem.hpp"
 
+#ifdef _WIN32
+#pragma optimize("", off)
+#endif
+
 using namespace std;
 
 #ifdef _WIN32
-#pragma optimize("", off)
 _declspec(noinline) int __cdecl sum(int a, int b)
 #else
-#pragma GCC optimize ("O0")
 int sum(int a, int b)
 #endif
 {
