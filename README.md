@@ -5,14 +5,16 @@ C++11 cross-platform library for working with memory (hooks, patches, pointer's 
 #include <iostream>
 #include "urmem.hpp"
 
+#ifdef _WIN32
+#pragma optimize("", off)
+#endif
+
 using namespace std;
 using m = urmem;
 
 #ifdef _WIN32
-#pragma optimize("", off)
 _declspec(noinline) int __cdecl sum(int a, int b)
 #else
-#pragma GCC optimize ("O0")
 int sum(int a, int b)
 #endif
 {
