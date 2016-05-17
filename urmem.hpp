@@ -201,6 +201,7 @@ public:
 			_base = reinterpret_cast<address_t>(info.dli_fbase);
 			_size = buf.st_size;
 #endif
+			return true;
 		}
 
 		bool find(const char *pattern, const char *mask, address_t &addr)
@@ -292,10 +293,10 @@ public:
 
 	private:
 
-		address_t		_patch_addr;
-		bytearray_t		_original_data;
-		bytearray_t		_new_data;
-		bool			_enabled;
+		address_t _patch_addr;
+		bytearray_t _original_data;
+		bytearray_t _new_data;
+		bool _enabled;
 	};
 
 	class hook
@@ -367,8 +368,8 @@ public:
 
 	private:
 
-		address_t				_original_addr{};
-		std::shared_ptr<patch>	_patch;
+		address_t _original_addr{};
+		std::shared_ptr<patch> _patch;
 	};
 
 	template<size_t, calling_convention, typename Sig>
@@ -462,14 +463,14 @@ public:
 			return _cb ? _cb(args...) : call(args...);
 		}		
 
-		std::shared_ptr<hook>		_hook;
-		std::mutex					_mutex;
+		std::shared_ptr<hook> _hook;
+		std::mutex _mutex;
 #ifdef _WIN32
-		interlayer<CConv>			_interlayer;
+		interlayer<CConv> _interlayer;
 #else
-		interlayer					_interlayer;
+		interlayer _interlayer;
 #endif
-		func						_cb;
+		func _cb;
 	};
 
 private:
