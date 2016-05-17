@@ -50,7 +50,7 @@ public:
 		{
 			T func;
 			address_t addr;
-		} u { func };
+		} u{ func };
 
 		return u.addr;
 	};
@@ -162,10 +162,10 @@ public:
 
 	private:
 #ifdef _WIN32
-		unsigned long	_original_protect;
+		unsigned long _original_protect;
 #endif
-		address_t		_addr;
-		size_t			_lenght;
+		address_t _addr;
+		size_t _lenght;
 	};
 
 	class sig_scanner
@@ -175,7 +175,7 @@ public:
 		bool init(void *addr_in_module) { return init(reinterpret_cast<address_t>(addr_in_module)); }
 		bool init(address_t addr_in_module)
 		{
-#ifdef _WIN32		
+#ifdef _WIN32					
 			MEMORY_BASIC_INFORMATION info{};
 			if (!VirtualQuery(reinterpret_cast<void *>(addr_in_module), &info, sizeof(info)))
 				return false;
@@ -186,9 +186,9 @@ public:
 			if (pe->Signature != IMAGE_NT_SIGNATURE)
 				return false;
 
-			_base = pe->OptionalHeader.ImageBase;
+			_base = reinterpret_cast<address_t>(info.AllocationBase);
 			_size = pe->OptionalHeader.SizeOfImage;
-#else
+#else	
 			Dl_info info{};
 			struct stat buf {};
 
@@ -246,7 +246,7 @@ public:
 			: patch{ reinterpret_cast<address_t>(addr), new_data } {}
 		patch(address_t addr, const bytearray_t &new_data)
 			: _patch_addr(addr), _new_data(new_data), _enabled(false)
-		{			
+		{
 			enable();
 		}
 
@@ -329,7 +329,7 @@ public:
 		hook(address_t inject_addr, address_t handle_addr, hook::type h_type = hook::type::jmp, size_t length = 5)
 		{
 			bytearray_t new_bytes(length, 0x90);
-			
+
 			switch (h_type)
 			{
 				case type::jmp:
@@ -344,8 +344,8 @@ public:
 					_original_addr = pointer(inject_addr).field<address_t>(1) + (inject_addr + 5);
 					break;
 				}
-			}	
-					
+			}
+
 			*reinterpret_cast<address_t *>(new_bytes.data() + 1) = handle_addr - (inject_addr + 5);
 
 			_patch = std::make_shared<patch>(inject_addr, new_bytes);
@@ -461,7 +461,7 @@ public:
 			hook::raii scope(*_hook);
 
 			return _cb ? _cb(args...) : call(args...);
-		}		
+		}
 
 		std::shared_ptr<hook> _hook;
 		std::mutex _mutex;
