@@ -22,9 +22,9 @@ class urmem
 {
 public:
 
-	typedef unsigned long		address_t;
-	typedef unsigned char		byte_t;
-	typedef std::vector<byte_t>	bytearray_t;
+	using address_t = unsigned long;
+	using byte_t = unsigned char;
+	using bytearray_t = std::vector<byte_t>;
 
 	enum class calling_convention
 	{
@@ -80,7 +80,7 @@ public:
 				return *this;
 			}
 
-			operator bool()
+			operator bool() const
 			{
 				return (_data & _mask) != 0;
 			}
@@ -88,8 +88,8 @@ public:
 		private:
 
 			T &_data;
-			T _mask;
-			size_t _index;
+			const T _mask;
+			const size_t _index;
 		};
 
 		bit operator [](size_t index)
@@ -123,14 +123,14 @@ public:
 		}
 
 		template<typename T>
-		operator T *()
+		operator T *() const
 		{
 			return reinterpret_cast<T *>(_pointer);
 		}
 
 	private:
 
-		address_t _pointer;
+		const address_t _pointer;
 	};
 
 	class unprotect_scope
@@ -165,7 +165,7 @@ public:
 		unsigned long _original_protect;
 #endif
 		address_t _addr;
-		size_t _lenght;
+		const size_t _lenght;
 	};
 
 	class sig_scanner
@@ -204,7 +204,7 @@ public:
 			return true;
 		}
 
-		bool find(const char *pattern, const char *mask, address_t &addr)
+		bool find(const char *pattern, const char *mask, address_t &addr) const
 		{
 			auto current_byte = reinterpret_cast<byte_t *>(_base);
 			auto last_byte = current_byte + _size;
@@ -286,7 +286,7 @@ public:
 			_enabled = false;
 		}
 
-		bool is_enabled(void)
+		bool is_enabled(void) const
 		{
 			return _enabled;
 		}
@@ -361,7 +361,12 @@ public:
 			_patch->disable();
 		}
 
-		address_t get_original_addr(void)
+		bool is_enabled(void) const
+		{
+			return _patch->is_enabled();
+		}
+
+		address_t get_original_addr(void) const
 		{
 			return _original_addr;
 		}
