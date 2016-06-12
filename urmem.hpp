@@ -16,8 +16,6 @@
 #include <memory>
 #include <mutex>
 
-// TODO: x64 support
-
 class urmem
 {
 public:
@@ -92,7 +90,7 @@ public:
 			const size_t _index;
 		};
 
-		bit operator [](size_t index)
+		bit operator [](size_t index) const
 		{
 			return bit(_data, index);
 		};
@@ -265,10 +263,10 @@ public:
 			_original_data.clear();
 
 			std::copy_n(reinterpret_cast<bytearray_t::value_type*>(_patch_addr), _new_data.size(),
-				std::back_inserter<bytearray_t>(_original_data)); // save original bytes
+				std::back_inserter<bytearray_t>(_original_data));
 
 			std::copy_n(_new_data.data(), _new_data.size(),
-				reinterpret_cast<bytearray_t::value_type*>(_patch_addr)); // put new bytes	
+				reinterpret_cast<bytearray_t::value_type*>(_patch_addr));	
 
 			_enabled = true;
 		}
@@ -281,7 +279,7 @@ public:
 			unprotect_scope scope(_patch_addr, _new_data.size());
 
 			std::copy_n(_original_data.data(), _original_data.size(),
-				reinterpret_cast<bytearray_t::value_type*>(_patch_addr)); // put original bytes			
+				reinterpret_cast<bytearray_t::value_type*>(_patch_addr));		
 
 			_enabled = false;
 		}
