@@ -16,8 +16,7 @@ int sum(int a, int b)
 	return a + b;
 }
 
-class adder
-{
+class adder {
 public:
 	adder(int a) : _a(a) {};
 #ifdef _WIN32
@@ -32,15 +31,13 @@ private:
 	int _a{};
 };
 
-enum e_hook
-{
+enum e_hook {
 	h_sum,
 	h_adder_sum,
 	h_message_box
 };
 
-int main(void)
-{
+int main(void) {
 	/*Function*/
 
 	urmem::smart_hook<
@@ -49,8 +46,7 @@ int main(void)
 		int(int, int)> // signature
 		hook_sum(urmem::get_func_addr(&sum));
 
-	hook_sum.attach([&hook_sum](int a, int b)
-	{
+	hook_sum.attach([&hook_sum](int a, int b) {
 		return hook_sum.call(a, b) * 2; // will double the result
 	});
 
@@ -63,8 +59,7 @@ int main(void)
 	urmem::smart_hook<e_hook::h_adder_sum, urmem::calling_convention::thiscall, int(void *, int)>
 		hook_adder_sum(urmem::get_func_addr(&adder::sum));
 
-	hook_adder_sum.attach([&hook_adder_sum](void *_this, int b)
-	{
+	hook_adder_sum.attach([&hook_adder_sum](void *_this, int b) {
 		return hook_adder_sum.call(_this, b) * 10;
 	});
 
@@ -72,14 +67,13 @@ int main(void)
 
 #ifdef _WIN32	
 	/*WinAPI function*/
-	
+
 	auto addr = GetProcAddress(GetModuleHandleA("User32.dll"), "MessageBoxA");
 
 	urmem::smart_hook<e_hook::h_message_box, urmem::calling_convention::stdcall,
 		int(HWND, LPCSTR, LPCSTR, UINT)> hook_message_box(addr);
-	
-	hook_message_box.attach([&hook_message_box](HWND wnd, LPCSTR text, LPCSTR caption, UINT type)
-	{
+
+	hook_message_box.attach([&hook_message_box](HWND wnd, LPCSTR text, LPCSTR caption, UINT type) {
 		return hook_message_box.call(wnd, "Hello, urmem!", "Author: urShadow", type);
 	});
 
