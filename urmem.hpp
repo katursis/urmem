@@ -188,6 +188,7 @@ public:
 			size_t i{};
 			while (current_byte < last_byte) {
 				for (i = 0; mask[i]; ++i) {
+					// TODO: fix out of bounds
 					if ((mask[i] != '?') && (static_cast<byte_t>(pattern[i]) != current_byte[i])) {
 						break;
 					}
