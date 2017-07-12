@@ -47,6 +47,20 @@ public:
 		return u.addr;
 	};
 
+	static void unprotect_memory(address_t addr, size_t length) {
+#ifdef _WIN32
+		unsigned long original_protect;
+
+		VirtualProtect(reinterpret_cast<void *>(addr), length, PAGE_EXECUTE_READWRITE, &original_protect);
+#else
+		auto pagesize = sysconf(_SC_PAGE_SIZE);
+
+		addr = addr & ~(pagesize - 1);
+
+		mprotect(reinterpret_cast<void *>(addr), length, PROT_READ | PROT_WRITE | PROT_EXEC);
+#endif
+	}
+
 	template<typename T>
 	class bit_manager {
 	public:
@@ -218,6 +232,8 @@ public:
 			: patch{reinterpret_cast<address_t>(addr), new_data} {}
 		patch(address_t addr, const bytearray_t &new_data)
 			: _patch_addr(addr), _new_data(new_data), _enabled(false) {
+			unprotect_memory(_patch_addr, _new_data.size());
+
 			enable();
 		}
 
@@ -229,8 +245,6 @@ public:
 			if (_enabled) {
 				return;
 			}
-
-			unprotect_scope scope(_patch_addr, _new_data.size());
 
 			_original_data.clear();
 
@@ -253,8 +267,6 @@ public:
 			if (!_enabled) {
 				return;
 			}
-
-			unprotect_scope scope(_patch_addr, _new_data.size());
 
 			std::copy_n(
 				_original_data.data(),
