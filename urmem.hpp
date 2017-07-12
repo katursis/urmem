@@ -231,7 +231,7 @@ public:
 		patch(void *addr, const bytearray_t &new_data)
 			: patch{reinterpret_cast<address_t>(addr), new_data} {}
 		patch(address_t addr, const bytearray_t &new_data)
-			: _patch_addr(addr), _new_data(new_data), _enabled(false) {
+			: _patch_addr(addr), _new_data(new_data), _original_data(new_data.size(), 0x90), _enabled(false) {
 			unprotect_memory(_patch_addr, _new_data.size());
 
 			enable();
@@ -246,12 +246,10 @@ public:
 				return;
 			}
 
-			_original_data.clear();
-
 			std::copy_n(
-				reinterpret_cast<bytearray_t::value_type*>(_patch_addr),
+				reinterpret_cast<bytearray_t::value_type *>(_patch_addr),
 				_new_data.size(),
-				std::back_inserter<bytearray_t>(_original_data)
+				_original_data.data()
 			);
 
 			std::copy_n(
