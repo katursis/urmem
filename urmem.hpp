@@ -3,6 +3,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <intrin.h> 
+
+#pragma intrinsic(_ReturnAddress) 
 #else
 #include <dlfcn.h>
 #include <sys/stat.h> 
@@ -27,6 +30,19 @@ public:
 		stdcall,
 		thiscall
 	};
+
+#ifdef _WIN32
+    __forceinline
+#else 
+    __attribute__((always_inline))
+#endif
+        static address_t get_call_address() {
+#ifdef _WIN32
+        return reinterpret_cast<address_t>(_ReturnAddress()) - 5;
+#else 
+        return reinterpret_cast<address_t>(__builtin_return_address(0)) - 5;
+#endif
+    }
 
 	template<calling_convention CConv, typename Ret = void, typename ... Args>
 	static Ret call_function(address_t address, Args ... args) {
