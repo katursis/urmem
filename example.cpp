@@ -37,7 +37,7 @@ enum e_hook {
 	h_message_box
 };
 
-int main(void) {
+int main() {
 	/*Function*/
 
 	urmem::smart_hook<

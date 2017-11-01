@@ -65,12 +65,12 @@ public:
 	template<typename T>
 	class bit_manager {
 	public:
-		bit_manager(void) = delete;
+		bit_manager() = delete;
 		bit_manager(T &src) :_data(src) {}
 
 		class bit {
 		public:
-			bit(void) = delete;
+			bit() = delete;
 			bit(T &src, size_t index) : _data(src), _mask(1 << index), _index(index) {}
 
 			bit &operator=(bool value) {
@@ -103,7 +103,7 @@ public:
 
 	class pointer {
 	public:
-		pointer(void) = delete;
+		pointer() = delete;
 		template<typename T>
 		pointer(T *address) : pointer{reinterpret_cast<address_t>(address)} {}
 		pointer(address_t address) : _pointer(address) {}
@@ -128,7 +128,7 @@ public:
 
 	class unprotect_scope {
 	public:
-		unprotect_scope(void) = delete;
+		unprotect_scope() = delete;
 		unprotect_scope(address_t addr, size_t length) :_addr(addr), _lenght(length) {
 #ifdef _WIN32
 			VirtualProtect(reinterpret_cast<void *>(_addr), _lenght, PAGE_EXECUTE_READWRITE, &_original_protect);
@@ -141,7 +141,7 @@ public:
 #endif
 		}
 
-		~unprotect_scope(void) {
+		~unprotect_scope() {
 #ifdef _WIN32
 			VirtualProtect(reinterpret_cast<void *>(_addr), _lenght, _original_protect, nullptr);
 #else
@@ -228,7 +228,7 @@ public:
 
 	class patch {
 	public:
-		patch(void) = delete;
+		patch() = delete;
 		patch(void *addr, const bytearray_t &new_data)
 			: patch{reinterpret_cast<address_t>(addr), new_data} {}
 		patch(address_t addr, const bytearray_t &new_data)
@@ -238,11 +238,11 @@ public:
 			enable();
 		}
 
-		~patch(void) {
+		~patch() {
 			disable();
 		}
 
-		void enable(void) {
+		void enable() {
 			if (_enabled) {
 				return;
 			}
@@ -262,7 +262,7 @@ public:
 			_enabled = true;
 		}
 
-		void disable(void) {
+		void disable() {
 			if (!_enabled) {
 				return;
 			}
@@ -276,7 +276,7 @@ public:
 			_enabled = false;
 		}
 
-		bool is_enabled(void) const {
+		bool is_enabled() const {
 			return _enabled;
 		}
 
@@ -296,12 +296,12 @@ public:
 
 		class raii {
 		public:
-			raii(void) = delete;
+			raii() = delete;
 			raii(hook &h) : _hook(h) {
 				_hook.disable();
 			}
 
-			~raii(void) {
+			~raii() {
 				_hook.enable();
 			}
 
@@ -309,7 +309,7 @@ public:
 			hook &_hook;
 		};
 
-		hook(void) = delete;
+		hook() = delete;
 		hook(void *inject_addr, void *handle_addr, hook::type h_type = hook::type::jmp, size_t length = 5) :
 			hook{reinterpret_cast<address_t>(inject_addr), reinterpret_cast<address_t>(handle_addr), h_type, length} {};
 		hook(address_t inject_addr, address_t handle_addr, hook::type h_type = hook::type::jmp, size_t length = 5) {
@@ -337,19 +337,19 @@ public:
 			_patch = std::make_shared<patch>(inject_addr, new_bytes);
 		}
 
-		void enable(void) {
+		void enable() {
 			_patch->enable();
 		}
 
-		void disable(void) {
+		void disable() {
 			_patch->disable();
 		}
 
-		bool is_enabled(void) const {
+		bool is_enabled() const {
 			return _patch->is_enabled();
 		}
 
-		address_t get_original_addr(void) const {
+		address_t get_original_addr() const {
 			return _original_addr;
 		}
 
@@ -378,7 +378,7 @@ public:
 			_cb = f;
 		}
 
-		void detach(void) {
+		void detach() {
 			_cb = nullptr;
 		}
 
@@ -387,7 +387,7 @@ public:
 		}
 
 	private:
-		static smart_hook<Id, CConv, Ret(Args...)> *&get_data(void) {
+		static smart_hook<Id, CConv, Ret(Args...)> *&get_data() {
 			static smart_hook<Id, CConv, Ret(Args...)> *d{};
 
 			return d;
