@@ -5,78 +5,52 @@
 #pragma optimize("", off)
 #endif
 
-using namespace std;
-
 #ifdef _WIN32
-_declspec(noinline) int __cdecl sum(int a, int b)
-#else
-int sum(int a, int b)
+_declspec(noinline)
 #endif
-{
-	return a + b;
+int
+#ifdef _WIN32
+__cdecl
+#endif
+Sum(int a, int b) {
+    return a + b;
 }
 
-class adder {
+class Adder {
 public:
-	adder(int a) : _a(a) {};
+    Adder(int a) : _a(a) {};
 #ifdef _WIN32
-	_declspec(noinline) int sum(int b)
-#else
-	int sum(int b)
+    _declspec(noinline)
 #endif
-	{
-		return _a + b;
-	}
+    int Sum(int b) {
+        return _a + b;
+    }
 private:
-	int _a{};
+    int _a{};
 };
 
-enum e_hook {
-	h_sum,
-	h_adder_sum,
-	h_message_box
+urmem::hook hook_sum, hook_adder__sum;
+
+int MySum(int a, int b) {
+    return hook_sum.call<urmem::calling_convention::cdeclcall, int>(a, b) * 2;
+}
+
+int MyAdder__Sum(void *_this, int b) {
+    return hook_adder__sum.call<urmem::calling_convention::thiscall, int>(_this, b) * 10;
 };
 
 int main() {
-	/*Function*/
+    // 1) Function
+    hook_sum.install(urmem::get_func_addr(&Sum), urmem::get_func_addr(&MySum));
 
-	urmem::smart_hook<
-		e_hook::h_sum, // unique hook's id
-		urmem::calling_convention::cdeclcall, // calling convention
-		int(int, int)> // signature
-		hook_sum(urmem::get_func_addr(&sum));
+    std::cout << Sum(2, 3) << std::endl; // will print '10'
 
-	hook_sum.attach([&hook_sum](int a, int b) {
-		return hook_sum.call(a, b) * 2; // will double the result
-	});
+    // 2) Method
+    Adder adder(10);
 
-	cout << sum(2, 3) << endl; // will print '10'
+    hook_adder__sum.install(urmem::get_func_addr(&Adder::Sum), urmem::get_func_addr(&MyAdder__Sum));
 
-	/*Class method*/
+    std::cout << adder.Sum(10) << std::endl; // will print '200'
 
-	adder adder_obj(10);
-
-	urmem::smart_hook<e_hook::h_adder_sum, urmem::calling_convention::thiscall, int(void *, int)>
-		hook_adder_sum(urmem::get_func_addr(&adder::sum));
-
-	hook_adder_sum.attach([&hook_adder_sum](void *_this, int b) {
-		return hook_adder_sum.call(_this, b) * 10;
-	});
-
-	cout << adder_obj.sum(10) << endl; // will print '200'
-
-#ifdef _WIN32	
-	/*WinAPI function*/
-
-	auto addr = GetProcAddress(GetModuleHandleA("User32.dll"), "MessageBoxA");
-
-	urmem::smart_hook<e_hook::h_message_box, urmem::calling_convention::stdcall,
-		int(HWND, LPCSTR, LPCSTR, UINT)> hook_message_box(addr);
-
-	hook_message_box.attach([&hook_message_box](HWND wnd, LPCSTR text, LPCSTR caption, UINT type) {
-		return hook_message_box.call(wnd, "Hello, urmem!", "Author: urShadow", type);
-	});
-
-	MessageBoxA(0, "Hello, World!", "Caption", MB_OK);
-#endif
+    return 1;
 }

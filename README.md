@@ -9,33 +9,29 @@ C++11 cross-platform library for working with memory (hooks, patches, pointer's 
 #pragma optimize("", off)
 #endif
 
-using namespace std;
-using m = urmem;
-
 #ifdef _WIN32
-_declspec(noinline) int __cdecl sum(int a, int b)
-#else
-int sum(int a, int b)
+_declspec(noinline)
 #endif
-{
-	return a + b;
+int
+#ifdef _WIN32
+__cdecl
+#endif
+Sum(int a, int b) {
+    return a + b;
 }
 
-enum e_hook
-{
-	h_sum
-};
+urmem::hook hook_sum;
 
-int main(void)
-{
-	m::smart_hook<e_hook::h_sum, m::calling_convention::cdeclcall, int(int, int)> hook_sum(m::get_func_addr(&sum));
+int MySum(int a, int b) {
+    return hook_sum.call<urmem::calling_convention::cdeclcall, int>(a, b) * 2;
+}
 
-	hook_sum.attach([&hook_sum](int a, int b)
-	{
-		return hook_sum.call(a, b) * 2;
-	});
+int main() {
+    hook_sum.install(urmem::get_func_addr(&Sum), urmem::get_func_addr(&MySum));
 
-	cout << sum(2, 3) << endl; // will print '10'	
+    std::cout << Sum(2, 3) << std::endl; // will print '10'
+
+    return 1;
 }
 ```
 ## TODO
