@@ -234,8 +234,8 @@ public:
 
     private:
         address_t _patch_addr;
-        bytearray_t _original_data;
         bytearray_t _new_data;
+        bytearray_t _original_data;
         bool _enabled;
     };
 
