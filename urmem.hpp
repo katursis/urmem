@@ -32,7 +32,7 @@ public:
     template<calling_convention CConv = calling_convention::cdeclcall, typename Ret = void, typename ... Args>
     static Ret call_function(address_t address, Args ... args) {
 #ifdef _WIN32
-        return invoker<CConv>::call<Ret, Args...>(address, args...);
+        return invoker<CConv>::template call<Ret, Args...>(address, args...);
 #else
         return (reinterpret_cast<Ret(*)(Args...)>(address))(args...);
 #endif
