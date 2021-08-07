@@ -225,6 +225,11 @@ class urmem {
 
     ~patch() { disable(); }
 
+    static std::shared_ptr<patch> make(address_t addr,
+                                       const bytearray_t &new_data) {
+      return std::make_shared<patch>(addr, new_data);
+    }
+
     void enable() {
       if (_enabled) {
         return;
@@ -313,7 +318,7 @@ class urmem {
       *reinterpret_cast<address_t *>(&new_bytes[1]) =
           handle_addr - (inject_addr + 5);
 
-      _patch = std::make_shared<patch>(inject_addr, new_bytes);
+      _patch = patch::make(inject_addr, new_bytes);
     }
 
     void enable() { _patch->enable(); }
