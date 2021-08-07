@@ -123,7 +123,7 @@ public:
 
         ~unprotect_scope() {
 #ifdef _WIN32
-            VirtualProtect(reinterpret_cast<void *>(_addr), _length, _original_protect, nullptr);
+            VirtualProtect(reinterpret_cast<void *>(_addr), _length, _original_protect, &_original_protect);
 #else
             mprotect(reinterpret_cast<void *>(_addr), _length, PROT_READ | PROT_EXEC);
 #endif
