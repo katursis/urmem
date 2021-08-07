@@ -282,6 +282,14 @@ class urmem {
       install(inject_addr, handle_addr, h_type, length);
     }
 
+    template <typename T>
+    static std::shared_ptr<hook> make(address_t inject_addr, T handle,
+                                      hook::type h_type = hook::type::jmp,
+                                      std::size_t length = 5) {
+      return std::make_shared<hook>(inject_addr, get_func_addr(handle), h_type,
+                                    length);
+    }
+
     void install(address_t inject_addr, address_t handle_addr,
                  hook::type h_type = hook::type::jmp, std::size_t length = 5) {
       bytearray_t new_bytes(length, 0x90);
